@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 构建产物
+build/
+dist/
+*.spec
+
+# 二进制与生成资源 (make_icon.py 可重新生成)
+app.ico
+app_preview.png
+
+# 测试数据 (运行 test_core.py 自动生成)
+test_data/
+
+# 日志
+*.log
+
+# WorkBuddy 工作区数据
+.workbuddy/
