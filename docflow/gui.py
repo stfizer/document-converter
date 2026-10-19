@@ -64,12 +64,15 @@ class ConvertWorker(QThread):
     done_sig = Signal(bool)
     progress_sig = Signal(int)
 
-    def __init__(self, task_name, files, out_dir, hifi=False):
+    def __init__(self, task_name, files, out_dir, hifi=False,
+                 excel_landscape=None, excel_fitwide=False):
         super().__init__()
         self.task_name = task_name
         self.files = files
         self.out_dir = out_dir
         self.hifi = hifi
+        self.excel_landscape = excel_landscape
+        self.excel_fitwide = excel_fitwide
 
     def run(self):
         ok_all = True
@@ -93,6 +96,13 @@ class ConvertWorker(QThread):
                 elif func == "xlsx_csv":
                     dst = os.path.join(out_base, base + "_CSV")
                     ok, msg = cv.excel_to_csv(src, dst, log=self.log_sig.emit)
+                elif func is cv.excel_to_pdf:
+                    dst = os.path.join(out_base, base + ext)
+                    ok, msg = cv.excel_to_pdf(src, dst, log=self.log_sig.emit,
+                                              landscape=self.excel_landscape,
+                                              fit_wide=self.excel_fitwide)
+                    if ok:
+                        self.log_sig.emit(f"  ✔ 输出: {dst}")
                 elif func is cv.pdf_to_word and self.hifi:
                     dst = os.path.join(out_base, base + ext)
                     ok, msg = pdf2docx_hifi.pdf_to_docx_hifi(src, dst, log=self.log_sig.emit)
@@ -158,6 +168,26 @@ class ConvertPage(QWidget):
             "文字位于文本框中, 适合查看/打印/少量修改。\n"
             "关闭为常规模式 (流式排版, 便于大段编辑, 但复杂布局可能有偏差)。")
         h.addWidget(self.chk_hifi)
+
+        # ---- Excel→PDF 页面设置 (仅该任务显示; 须在首次 _hint 前创建)
+        self.row_ps = QWidget()
+        hps = QHBoxLayout(self.row_ps)
+        hps.setContentsMargins(4, 0, 4, 0)
+        hps.addWidget(QLabel("页面方向:"))
+        self.cmb_orient = QComboBox()
+        self.cmb_orient.addItems(["跟随文档设置", "纵向", "横向（宽表格推荐）"])
+        self.cmb_orient.setFixedWidth(190)
+        hps.addWidget(self.cmb_orient)
+        self.chk_fitwide = QCheckBox("列缩放至一页宽（列不再被拆分到其他页）")
+        self.chk_fitwide.setChecked(True)
+        self.chk_fitwide.setToolTip(
+            "开启后忽略 Excel 原有打印缩放, 将所有列自动缩放到一页宽度内,\n"
+            "行数较多时向下自动分页。宽表格 (如职位表/台账) 推荐配合横向使用。")
+        hps.addWidget(self.chk_fitwide)
+        hps.addStretch(1)
+        lay.addWidget(self.row_ps)
+        self.row_ps.setVisible(False)
+
         self.cmb_task.currentIndexChanged.connect(self._hint)
         self._hint(0)
         lay.addWidget(g1)
@@ -235,9 +265,11 @@ class ConvertPage(QWidget):
     def _hint(self, idx):
         t = list(cv_tasks().values())[idx]
         self.lbl_hint.setText(f"支持格式: {t[0][1]}")
-        self.chk_hifi.setEnabled(self.cmb_task.currentText() == "PDF → Word")
-        if self.cmb_task.currentText() != "PDF → Word":
+        task = self.cmb_task.currentText()
+        self.chk_hifi.setEnabled(task == "PDF → Word")
+        if task != "PDF → Word":
             self.chk_hifi.setChecked(False)
+        self.row_ps.setVisible(task == "Excel → PDF")
 
     def add_files(self):
         t = list(cv_tasks().values())[self.cmb_task.currentIndex()]
@@ -276,8 +308,12 @@ class ConvertPage(QWidget):
         self.log.appendPlainText(f"—— 开始任务: {task_name} ({len(files)} 个文件) ——")
         self.btn_go.setEnabled(False)
         self.pb.setValue(0)
+        orient = self.cmb_orient.currentIndex()
+        landscape = {0: None, 1: False, 2: True}[orient]
         self.worker = ConvertWorker(task_name, files, out_dir,
-                                    hifi=self.chk_hifi.isChecked())
+                                    hifi=self.chk_hifi.isChecked(),
+                                    excel_landscape=landscape,
+                                    excel_fitwide=self.chk_fitwide.isChecked())
         self.worker.log_sig.connect(self.append_log)
         self.worker.progress_sig.connect(self.pb.setValue)
         self.worker.done_sig.connect(self._finished)

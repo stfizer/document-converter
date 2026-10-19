@@ -22,8 +22,11 @@ _PPT_PROGIDS = ["PowerPoint.Application", "KWPP.Application"]
 _com_lock = threading.Lock()
 
 
-def _com_to_pdf(src, dst, progids):
-    """通过 COM (MS Office 或 WPS) 将 office 文档导出为 PDF, 单线程串行调用"""
+def _com_to_pdf(src, dst, progids, page_setup=None):
+    """通过 COM (MS Office 或 WPS) 将 office 文档导出为 PDF, 单线程串行调用
+    page_setup: (landscape, fit_wide), 仅对 Excel 生效
+      landscape: None=跟随文档 / True=横向 / False=纵向
+      fit_wide: True=所有列缩放至一页宽 (宽表格推荐)"""
     last = "未知错误"
     with _com_lock:
         for progid in progids:
@@ -41,12 +44,25 @@ def _com_to_pdf(src, dst, progids):
                     except Exception:
                         continue
                 s, d = os.path.abspath(src), os.path.abspath(dst)
-                if "Word" in progid or "WPS" in progid and "KWPS" in progid:
+                if "Word" in progid or "KWPS" in progid:
                     doc = app.Documents.Open(s, ReadOnly=True)
                     doc.ExportAsFixedFormat(d, 17)          # wdExportFormatPDF
                     doc.Close(False)
                 elif "Excel" in progid or "KET" in progid:
                     wb = app.Workbooks.Open(s, ReadOnly=True)
+                    if page_setup and (page_setup[0] is not None or page_setup[1]):
+                        landscape, fit_wide = page_setup
+                        for ws in wb.Worksheets:
+                            try:
+                                ps = ws.PageSetup
+                                if landscape is not None:
+                                    ps.Orientation = 2 if landscape else 1  # 2=横向
+                                if fit_wide:
+                                    ps.Zoom = False
+                                    ps.FitToPagesWide = 1   # 所有列缩放至一页宽
+                                    ps.FitToPagesTall = False  # 高度自动分页
+                            except Exception:
+                                continue
                     wb.ExportAsFixedFormat(0, d)            # xlTypePDF
                     wb.Close(False)
                 else:  # PowerPoint / KWPP
@@ -111,9 +127,10 @@ def _docx_text_fallback_pdf(src, dst):
     return True, "未检测到 Office/WPS, 已用内置引擎简易排版(样式有损)"
 
 
-def _xlsx_text_fallback_pdf(src, dst):
-    """无 Office 时的 Excel->PDF 兜底: 表格转 HTML 再排版"""
+def _xlsx_text_fallback_pdf(src, dst, landscape=None):
+    """无 Office 时的 Excel->PDF 兜底: 表格转 HTML 再排版 (landscape=True 为横向)"""
     import openpyxl
+    import pymupdf
     wb = openpyxl.load_workbook(src, data_only=True)
     parts = []
     for ws in wb.worksheets:
@@ -122,7 +139,23 @@ def _xlsx_text_fallback_pdf(src, dst):
             cells = "".join(f"<td>{html.escape('' if v is None else str(v))}</td>" for v in row)
             parts.append(f"<tr>{cells}</tr>")
         parts.append("</table>")
-    _story_html_to_pdf("".join(parts), dst)
+    writer = pymupdf.DocumentWriter(dst)
+    story = pymupdf.Story(html="".join(parts))
+    if landscape:
+        try:
+            mediabox = pymupdf.paper_rect("a4-l")
+        except Exception:
+            mediabox = pymupdf.Rect(0, 0, 842, 595)
+    else:
+        mediabox = pymupdf.paper_rect("a4")
+    where = mediabox + (24, 24, -24, -24)
+    more = 1
+    while more:
+        dev = writer.begin_page(mediabox)
+        more, filled = story.place(where)
+        story.draw(dev)
+        writer.end_page()
+    writer.close()
     return True, "未检测到 Office/WPS, 已用内置引擎简易排版(样式有损)"
 
 
@@ -136,12 +169,15 @@ def word_to_pdf(src, dst, log=print):
     return _docx_text_fallback_pdf(src, dst)
 
 
-def excel_to_pdf(src, dst, log=print):
-    ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS)
+def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False):
+    """Excel -> PDF
+    landscape: None=跟随文档 / True=横向 / False=纵向
+    fit_wide:  所有列缩放至一页宽 (宽表格显示更完整)"""
+    ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS, page_setup=(landscape, fit_wide))
     if ok:
         return True, msg
     log(msg + "，正在使用内置引擎兜底…")
-    return _xlsx_text_fallback_pdf(src, dst)
+    return _xlsx_text_fallback_pdf(src, dst, landscape=landscape)
 
 
 def ppt_to_pdf(src, dst, log=print):
