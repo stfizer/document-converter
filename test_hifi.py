@@ -87,6 +87,44 @@ def make_sample():
     # 页脚
     page.insert_text((60, 800), "第 1 页 · 机密文件请勿外传", fontsize=9,
                      fontname="song", color=(0.5, 0.5, 0.5))
+
+    # ---- 第二页: 加粗 / 下划线 格式测试
+    page2 = doc.new_page(width=595, height=842)
+    page2.insert_font(fontname="song", fontfile=FONT_SONG)
+    page2.insert_font(fontname="yahei", fontfile=FONT_YAHEI)
+    fyahei2 = pymupdf.Font(fontfile=FONT_YAHEI)
+    fyahei_b = pymupdf.Font(fontfile=r"C:\Windows\Fonts\msyhbd.ttc")
+    page2.insert_font(fontname="yaheib", fontfile=r"C:\Windows\Fonts\msyhbd.ttc")
+
+    page2.insert_text((60, 80), "格式测试页", fontsize=18, fontname="yahei")
+    # 加粗行 (Bold 字体, flags/name 均应检出)
+    page2.insert_text((60, 130), "这一行是加粗文字 (Microsoft YaHei Bold)",
+                      fontsize=12, fontname="yaheib")
+    # 普通行 + 整行下划线
+    t1 = "这一行整段带有下划线，验证线条关联转换。"
+    page2.insert_text((60, 170), t1, fontsize=12, fontname="song")
+    w1 = fyahei2.text_length("普通", 12)  # 占位避免未用告警
+    wsong = pymupdf.Font(fontfile=FONT_SONG)
+    wt = wsong.text_length(t1, fontsize=12)
+    page2.draw_line(pymupdf.Point(60, 173), pymupdf.Point(60 + wt, 173),
+                    color=(0, 0, 0), width=0.8)
+    # 部分下划线行 (只有编号部分有线)
+    t2a, t2b = "合同编号：", "HT-2026-088"
+    page2.insert_text((60, 210), t2a + t2b, fontsize=12, fontname="song")
+    wa = wsong.text_length(t2a, fontsize=12)
+    wb = wsong.text_length(t2b, fontsize=12)
+    page2.draw_line(pymupdf.Point(60 + wa, 213), pymupdf.Point(60 + wa + wb, 213),
+                    color=(0, 0, 0), width=0.8)
+    # 表格横线 (不应被误判为下划线: 距文字行 >4.5pt)
+    page2.draw_line(pymupdf.Point(60, 280), pymupdf.Point(400, 280),
+                    color=(0, 0, 0), width=0.8)
+    page2.insert_text((60, 258), "表格线在文字下方 10pt+, 不应转为文字下划线",
+                      fontsize=12, fontname="song")
+    # 粗体检测对照: SimHei (黑体, 视觉粗但字体名无 Bold)
+    page2.insert_font(fontname="hei", fontfile=FONT_HEI)
+    page2.insert_text((60, 320), "黑体文字对照行 (视觉粗, 无 Bold 标志)",
+                      fontsize=12, fontname="hei")
+
     doc.save(path)
     doc.close()
     return path
@@ -162,6 +200,19 @@ def main():
     print(f"   高保真模式相似度: {s_hifi * 100:.2f}%")
     print(f"   标准模式相似度:   {s_std * 100:.2f}%")
     print(f"   提升: {(s_hifi - s_std) * 100:+.2f} 个百分点")
+
+    print("6) 格式保真断言 (document.xml):")
+    import zipfile
+    with zipfile.ZipFile(hifi_docx) as z:
+        xml = z.read("word/document.xml").decode("utf-8")
+    n_b = xml.count("<w:b/>")
+    n_u = xml.count('<w:u w:val="single"/>')
+    ok_bold = n_b >= 1
+    ok_ul = n_u >= 2
+    print(f"   加粗 <w:b/> x{n_b}  -> {'PASS' if ok_bold else 'FAIL'}")
+    print(f"   下划线 <w:u/> x{n_u}  -> {'PASS' if ok_ul else 'FAIL'} (预期>=2: 整行+部分)")
+    assert ok_bold and ok_ul, "格式断言失败"
+    print("   格式断言全部通过")
     return 0
 
 

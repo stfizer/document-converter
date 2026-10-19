@@ -3,9 +3,13 @@
 
 原理: 用 PyMuPDF 提取每个文本行/图片/矢量图形的精确位置、字体、字号、颜色,
 在 Word 中用"页面绝对定位的文本框/形状"逐元素重建, 视觉上与原 PDF 几乎一致。
+- 下划线: PDF 中的下划线是独立画线, 自动关联到其上方文字行, 转为 Word 真实下划线格式
+- 加粗: 字体 flags + 字体名启发式 (Bold/Heavy/Black)
+- 中文字体名映射: SimSun->宋体 等, 提高Word字体命中率
 适合存档/打印/查看; 局限: 文字位于文本框中, 大段改写不如普通文档方便。
 """
 import io
+import re
 
 import pymupdf
 from docx import Document
@@ -13,6 +17,22 @@ from docx.shared import Emu
 from docx.oxml import parse_xml
 
 EMU = 12700  # 1pt = 12700 EMU
+
+_BOLD_RE = re.compile(r"(bold|heavy|black|extrabold|ultrabold|semibold|demibold)", re.I)
+
+FONT_MAP = {
+    "SimSun": "宋体", "NSimSun": "新宋体", "SimHei": "黑体",
+    "KaiTi": "楷体", "KaiTi_GB2312": "楷体_GB2312",
+    "FangSong": "仿宋", "FangSong_GB2312": "仿宋_GB2312",
+    "MicrosoftYaHei": "微软雅黑", "Microsoft YaHei": "微软雅黑",
+    "DengXian": "等线", "STZhongsong": "华文中宋", "STKaiti": "华文楷体",
+    "STXihei": "华文细黑", "STSong": "华文宋体", "STFangsong": "华文仿宋",
+    "LiSu": "隶书", "YouYuan": "幼圆",
+}
+
+
+def _map_font(name):
+    return FONT_MAP.get(name, FONT_MAP.get(name.replace(" ", ""), name))
 
 NS = (
     'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
@@ -44,7 +64,7 @@ def _hexf(seq):
 
 
 def _clean_font(name, flags):
-    """去掉子集前缀(如 ABCDEF+SimSun); 提取粗斜体"""
+    """去掉子集前缀(如 ABCDEF+SimSun); 提取粗斜体 (flags + 字体名启发式)"""
     name = name.split("+")[-1]
     bold = bool(flags & 16)
     italic = bool(flags & 2)
@@ -55,26 +75,36 @@ def _clean_font(name, flags):
             bold = bold or bool(b)
             italic = italic or bool(i)
             break
-    return name, bold, italic
+    if _BOLD_RE.search(name):
+        bold = True
+    return _map_font(name), bold, italic
 
 
-def _line_textbox(line):
-    """一个文本行 -> 一个页面绝对定位的无边框文本框"""
+def _line_textbox(line, ul_rects=()):
+    """一个文本行 -> 一个页面绝对定位的无边框文本框
+    ul_rects: 命中该行的下划线线段 x 区间列表, 命中的 span 加真实下划线格式"""
     x0, y0, x1, y1 = line["bbox"]
     spans = [s for s in line.get("spans", []) if s.get("text", "").strip()]
     if not spans:
-        return None
+        return None, []
     size = max(s.get("size", 11) for s in spans)
     w = (x1 - x0) + size * 0.2 + 1
     h = (y1 - y0) + size * 0.25 + 1
     line_tw = max(20, int(round((y1 - y0) * 20)))
 
     runs = []
+    used_ul = []
     for sp in spans:
+        sb = sp.get("bbox", (x0, y0, x1, y1))
+        sw_ = max(sb[2] - sb[0], 0.1)
+        ul = any(min(sb[2], u[1]) - max(sb[0], u[0]) > 0.35 * sw_ for u in ul_rects)
+        if ul:
+            used_ul.append((sb[0], sb[2]))
         font, bold, italic = _clean_font(sp.get("font", "Arial"), sp.get("flags", 0))
         color = _hex(sp.get("color", 0))
         sz = max(2, int(round(sp.get("size", 11) * 2)))
-        fmt = ("<w:b/>" if bold else "") + ("<w:i/>" if italic else "")
+        fmt = ("<w:b/>" if bold else "") + ("<w:i/>" if italic else "") + \
+              ('<w:u w:val="single"/>' if ul else "")
         runs.append(
             f'<w:r><w:rPr><w:rFonts w:ascii="{font}" w:hAnsi="{font}" '
             f'w:eastAsia="{font}"/>{fmt}<w:color w:val="{color}"/>'
@@ -87,24 +117,25 @@ def _line_textbox(line):
     z = 1000000 + _nid()
     e = lambda v: int(round(v * EMU))
     nid = _nid()
-    return (f'<w:r {NS}><w:drawing>'
-            f'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" '
-            f'relativeHeight="{z}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
-            f'<wp:simplePos x="0" y="0"/>'
-            f'<wp:positionH relativeFrom="page"><wp:posOffset>{e(x0)}</wp:posOffset></wp:positionH>'
-            f'<wp:positionV relativeFrom="page"><wp:posOffset>{e(y0)}</wp:posOffset></wp:positionV>'
-            f'<wp:extent cx="{e(w)}" cy="{e(h)}"/>'
-            f'<wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
-            f'<wp:docPr id="{nid}" name="tb{nid}"/><wp:cNvGraphicFramePr/>'
-            f'<a:graphic><a:graphicData '
-            f'uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">'
-            f'<wps:wsp><wps:cNvSpPr txBox="1"/>'
-            f'<wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{e(w)}" cy="{e(h)}"/></a:xfrm>'
-            f'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>{shape}</wps:spPr>'
-            f'<wps:txbx><w:txbxContent>{para}</w:txbxContent></wps:txbx>'
-            f'<wps:bodyPr rot="0" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" '
-            f'anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr>'
-            f'</wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>')
+    xml = (f'<w:r {NS}><w:drawing>'
+           f'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" '
+           f'relativeHeight="{z}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
+           f'<wp:simplePos x="0" y="0"/>'
+           f'<wp:positionH relativeFrom="page"><wp:posOffset>{e(x0)}</wp:posOffset></wp:positionH>'
+           f'<wp:positionV relativeFrom="page"><wp:posOffset>{e(y0)}</wp:posOffset></wp:positionV>'
+           f'<wp:extent cx="{e(w)}" cy="{e(h)}"/>'
+           f'<wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
+           f'<wp:docPr id="{nid}" name="tb{nid}"/><wp:cNvGraphicFramePr/>'
+           f'<a:graphic><a:graphicData '
+           f'uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">'
+           f'<wps:wsp><wps:cNvSpPr txBox="1"/>'
+           f'<wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{e(w)}" cy="{e(h)}"/></a:xfrm>'
+           f'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>{shape}</wps:spPr>'
+           f'<wps:txbx><w:txbxContent>{para}</w:txbxContent></wps:txbx>'
+           f'<wps:bodyPr rot="0" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" '
+           f'anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr>'
+           f'</wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>')
+    return xml, used_ul
 
 
 def _rect_shape(x, y, w, h, fill_hex=None, stroke_hex=None, stroke_w=1.0):
@@ -181,12 +212,13 @@ def pdf_to_docx_hifi(src, dst, log=print):
         sec.header_distance = sec.footer_distance = Emu(0)
 
         runs = []
-        # ---- 矢量图形 (表格线/色块/下划线), 置于最底层
+        # ---- 矢量图形分类: 水平细线作为"下划线候选", 其余待画形状
         try:
             drawings = page.get_drawings()
         except Exception:
             drawings = []
-        for d in drawings:
+        thin = []  # (idx, rect, color) 水平细描边线/细填充条: 下划线候选(或表格横线)
+        for di, d in enumerate(drawings):
             r = d.get("rect")
             if r is None:
                 continue
@@ -196,19 +228,13 @@ def pdf_to_docx_hifi(src, dst, log=print):
             fill, stroke = d.get("fill"), d.get("color")
             sw = d.get("width") or 1.0
             try:
-                if fill is not None and "f" in d["type"]:
-                    runs.append(_rect_shape(r.x0, r.y0, r.width, r.height,
-                                            fill_hex=_hexf(fill)))
-                    n_shape += 1
-                elif stroke is not None and "s" in d["type"]:
-                    if r.height <= max(2.5, sw * 2):     # 水平细线
-                        runs.append(_rect_shape(r.x0, r.y0, r.width,
-                                                max(r.height, sw),
-                                                fill_hex=_hexf(stroke)))
-                    else:
-                        runs.append(_rect_shape(r.x0, r.y0, r.width, r.height,
-                                                stroke_hex=_hexf(stroke), stroke_w=sw))
-                    n_shape += 1
+                if stroke is not None and "s" in d["type"] and "f" not in d["type"] \
+                        and r.height <= max(2.5, sw * 2) \
+                        and 4 <= r.width <= page.rect.width - 5:
+                    thin.append((di, r, stroke))
+                elif fill is not None and "f" in d["type"] and "s" not in d["type"] \
+                        and r.height <= 2.2 and r.width >= 4:
+                    thin.append((di, r, fill))
             except Exception:
                 continue
 
@@ -229,15 +255,54 @@ def pdf_to_docx_hifi(src, dst, log=print):
             except Exception as e:
                 log(f"  ⚠ 第{pno + 1}页图片提取失败: {e}")
 
-        # ---- 文本行 (最上层)
+        # ---- 文本行 (最上层), 并把紧贴行底的水平线关联为 Word 真实下划线
+        ul_used = set()
         for block in page.get_text("dict")["blocks"]:
             if block.get("type") != 0:
                 continue
             for line in block.get("lines", []):
-                tb = _line_textbox(line)
+                x0, y0, x1, y1 = line["bbox"]
+                ul_rects = []
+                for di, r, color in thin:
+                    if di in ul_used:
+                        continue
+                    if y1 - 1.0 <= r.y0 <= y1 + 4.5:      # 线紧贴该行底部
+                        overlap = min(x1, r.x1) - max(x0, r.x0)
+                        if overlap >= 0.5 * max(1e-6, min(x1 - x0, r.x1 - r.x0)):
+                            ul_rects.append((r.x0, r.x1))
+                            ul_used.add(di)
+                tb, _used = _line_textbox(line, ul_rects)
                 if tb:
                     runs.append(tb)
                     n_tb += 1
+
+        # ---- 剩余图形 (未匹配为下划线的表格横线/色块/外框等), 置于底层
+        for di, d in enumerate(drawings):
+            if di in ul_used:
+                continue
+            r = d.get("rect")
+            if r is None:
+                continue
+            if r.width > page.rect.width + 1 or r.height > page.rect.height + 1:
+                continue
+            fill, stroke = d.get("fill"), d.get("color")
+            sw = d.get("width") or 1.0
+            try:
+                if fill is not None and "f" in d["type"]:
+                    runs.append(_rect_shape(r.x0, r.y0, r.width, r.height,
+                                            fill_hex=_hexf(fill)))
+                    n_shape += 1
+                elif stroke is not None and "s" in d["type"]:
+                    if r.height <= max(2.5, sw * 2):     # 水平细线
+                        runs.append(_rect_shape(r.x0, r.y0, r.width,
+                                                max(r.height, sw),
+                                                fill_hex=_hexf(stroke)))
+                    else:
+                        runs.append(_rect_shape(r.x0, r.y0, r.width, r.height,
+                                                stroke_hex=_hexf(stroke), stroke_w=sw))
+                    n_shape += 1
+            except Exception:
+                continue
 
         # ---- 本页所有元素挂在一个锚定空段落上
         p = docx.add_paragraph()
