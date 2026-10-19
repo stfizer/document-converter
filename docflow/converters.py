@@ -175,9 +175,88 @@ def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False):
     fit_wide:  所有列缩放至一页宽 (宽表格显示更完整)"""
     ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS, page_setup=(landscape, fit_wide))
     if ok:
+        _auto_fix_rotation(dst, log=log)
         return True, msg
     log(msg + "，正在使用内置引擎兜底…")
     return _xlsx_text_fallback_pdf(src, dst, landscape=landscape)
+
+
+def _text_orientation(page):
+    """按字符方向向量统计: 返回 (正向横排字符数, 非正向[颠倒/竖排]字符数)
+    dir=(1,0) 为正常从左到右横排; 其余 (-1,0)/(0,±1) 视为未正向"""
+    try:
+        spans = page.get_texttrace()
+    except Exception:
+        h = v = 0
+        for b in page.get_text("dict")["blocks"]:
+            if b.get("type") != 0:
+                continue
+            for l in b.get("lines", []):
+                x0, y0, x1, y1 = l["bbox"]
+                if (x1 - x0) >= (y1 - y0):
+                    h += 1
+                else:
+                    v += 1
+        return h, v
+    good = bad = 0
+    for sp in spans:
+        dx, dy = sp.get("dir", (1, 0))
+        n = len(sp.get("chars", [])) or 1
+        if abs(dx) >= abs(dy) and dx > 0:
+            good += n
+        else:
+            bad += n
+    return good, bad
+
+
+def _auto_fix_rotation(path, log=print):
+    """自动摆正: 部分Excel/WPS版本导出后会出现"页面方向与表格内容不一致"
+    (内容被整体旋转90°, 或页面竖向但表格横躺)。
+    检测到文字竖排占多数时, 旋转内容重建页面, 自动在 (横向/纵向) x (4个旋转角)
+    中选择文字正向铺满的最佳组合。正常文档零成本跳过。"""
+    import pymupdf
+    try:
+        doc = pymupdf.open(path)
+    except Exception as e:
+        log(f"  ⚠ 摆正检测失败: {e}")
+        return
+    if not doc:
+        return
+    h, v = _text_orientation(doc[0])
+    if h >= v:
+        doc.close()
+        return                       # 文字正常横排, 无需处理
+    log("  ⚠ 检测到表格内容被旋转 90°, 正在自动摆正…")
+    src = doc
+    pw, ph = src[0].rect.width, src[0].rect.height
+    # 候选目标尺寸: 交换宽高(横向页) 与 原尺寸, x 4 个旋转角, 评分选最优
+    candidates = [(ph, pw), (pw, ph)]
+    best = None                       # (score, W, H, rot)
+    for (W, H) in candidates:
+        for rot in (0, 90, 180, 270):
+            t = pymupdf.open()
+            tp = t.new_page(width=W, height=H)
+            tp.show_pdf_page(tp.rect, src, 0, rotate=rot)
+            hh, vv = _text_orientation(tp)
+            t.close()
+            score = hh - vv
+            if best is None or score > best[0]:
+                best = (score, W, H, rot)
+            if score > 0 and (W, H) == (ph, pw):
+                break                 # 横页+横排 已是最优
+    _, W, H, rot = best
+    fixed = pymupdf.open()
+    for page in src:
+        np_ = fixed.new_page(width=W, height=H)
+        np_.show_pdf_page(np_.rect, src, page.number, rotate=rot)
+    fixed.save(path + ".fixed.pdf", garbage=3, deflate=True)
+    fixed.close()
+    src.close()
+    try:
+        os.replace(path + ".fixed.pdf", path)
+        log("  ✔ 已自动摆正表格方向")
+    except Exception as e:
+        log(f"  ⚠ 自动摆正失败: {e}")
 
 
 def ppt_to_pdf(src, dst, log=print):
