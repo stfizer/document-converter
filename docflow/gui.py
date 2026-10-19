@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from docflow import converters as cv
+from docflow import pdf2docx_hifi
 from docflow.drops import DropFilter, enable_page_drop
 from docflow.editors.word_editor import WordEditorPage
 from docflow.editors.excel_editor import ExcelEditorPage
@@ -63,11 +64,12 @@ class ConvertWorker(QThread):
     done_sig = Signal(bool)
     progress_sig = Signal(int)
 
-    def __init__(self, task_name, files, out_dir):
+    def __init__(self, task_name, files, out_dir, hifi=False):
         super().__init__()
         self.task_name = task_name
         self.files = files
         self.out_dir = out_dir
+        self.hifi = hifi
 
     def run(self):
         ok_all = True
@@ -91,6 +93,11 @@ class ConvertWorker(QThread):
                 elif func == "xlsx_csv":
                     dst = os.path.join(out_base, base + "_CSV")
                     ok, msg = cv.excel_to_csv(src, dst, log=self.log_sig.emit)
+                elif func is cv.pdf_to_word and self.hifi:
+                    dst = os.path.join(out_base, base + ext)
+                    ok, msg = pdf2docx_hifi.pdf_to_docx_hifi(src, dst, log=self.log_sig.emit)
+                    if ok:
+                        self.log_sig.emit(f"  ✔ 输出: {dst}")
                 else:
                     dst = os.path.join(out_base, base + ext)
                     ok, msg = func(src, dst, log=self.log_sig.emit)
@@ -144,6 +151,13 @@ class ConvertPage(QWidget):
         self.lbl_hint.setStyleSheet("color:#64748b; font-weight:normal;")
         h.addWidget(self.lbl_hint)
         h.addStretch(1)
+        self.chk_hifi = QCheckBox("高保真模式（文本框定位，排版与 PDF 一致）")
+        self.chk_hifi.setToolTip(
+            "仅对 PDF → Word 生效。\n"
+            "开启后按原位置逐行还原文字、表格线、图片、颜色, 排版与 PDF 几乎一致;\n"
+            "文字位于文本框中, 适合查看/打印/少量修改。\n"
+            "关闭为常规模式 (流式排版, 便于大段编辑, 但复杂布局可能有偏差)。")
+        h.addWidget(self.chk_hifi)
         self.cmb_task.currentIndexChanged.connect(self._hint)
         self._hint(0)
         lay.addWidget(g1)
@@ -221,6 +235,9 @@ class ConvertPage(QWidget):
     def _hint(self, idx):
         t = list(cv_tasks().values())[idx]
         self.lbl_hint.setText(f"支持格式: {t[0][1]}")
+        self.chk_hifi.setEnabled(self.cmb_task.currentText() == "PDF → Word")
+        if self.cmb_task.currentText() != "PDF → Word":
+            self.chk_hifi.setChecked(False)
 
     def add_files(self):
         t = list(cv_tasks().values())[self.cmb_task.currentIndex()]
@@ -259,7 +276,8 @@ class ConvertPage(QWidget):
         self.log.appendPlainText(f"—— 开始任务: {task_name} ({len(files)} 个文件) ——")
         self.btn_go.setEnabled(False)
         self.pb.setValue(0)
-        self.worker = ConvertWorker(task_name, files, out_dir)
+        self.worker = ConvertWorker(task_name, files, out_dir,
+                                    hifi=self.chk_hifi.isChecked())
         self.worker.log_sig.connect(self.append_log)
         self.worker.progress_sig.connect(self.pb.setValue)
         self.worker.done_sig.connect(self._finished)
