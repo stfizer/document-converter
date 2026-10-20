@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QProgressBar, QPlainTextEdit, QFileDialog, QMessageBox,
     QGroupBox, QFrame, QTabWidget, QTreeWidget, QTreeWidgetItem, QHeaderView,
     QTextEdit, QInputDialog, QApplication, QSizePolicy, QSplitter, QAbstractItemView,
+    QSpinBox,
 )
 
 from docflow import converters as cv
@@ -65,7 +66,7 @@ class ConvertWorker(QThread):
     progress_sig = Signal(int)
 
     def __init__(self, task_name, files, out_dir, hifi=False,
-                 excel_landscape=None, excel_fitwide=False):
+                 excel_landscape=None, excel_fitwide=False, excel_total_pages=None):
         super().__init__()
         self.task_name = task_name
         self.files = files
@@ -73,6 +74,7 @@ class ConvertWorker(QThread):
         self.hifi = hifi
         self.excel_landscape = excel_landscape
         self.excel_fitwide = excel_fitwide
+        self.excel_total_pages = excel_total_pages
 
     def run(self):
         ok_all = True
@@ -100,7 +102,8 @@ class ConvertWorker(QThread):
                     dst = os.path.join(out_base, base + ext)
                     ok, msg = cv.excel_to_pdf(src, dst, log=self.log_sig.emit,
                                               landscape=self.excel_landscape,
-                                              fit_wide=self.excel_fitwide)
+                                              fit_wide=self.excel_fitwide,
+                                              total_pages=self.excel_total_pages)
                     if ok:
                         self.log_sig.emit(f"  ✔ 输出: {dst}")
                 elif func is cv.pdf_to_word and self.hifi:
@@ -184,6 +187,17 @@ class ConvertPage(QWidget):
             "开启后忽略 Excel 原有打印缩放, 将所有列自动缩放到一页宽度内,\n"
             "行数较多时向下自动分页。宽表格 (如职位表/台账) 推荐配合横向使用。")
         hps.addWidget(self.chk_fitwide)
+        hps.addWidget(QLabel("总页数:"))
+        self.spin_pages = QSpinBox()
+        self.spin_pages.setRange(0, 200)
+        self.spin_pages.setValue(0)
+        self.spin_pages.setSpecialValueText("自动（按内容分页）")
+        self.spin_pages.setFixedWidth(170)
+        self.spin_pages.setToolTip(
+            "指定最终 PDF 的总页数, 表格内容会缩放并均匀切割到这几页里。\n"
+            "0 = 自动 (按内容多少分页, 不限页数)。\n"
+            "例: 设为 3, 则长表格被均分为 3 页, 每页行数基本相同。")
+        hps.addWidget(self.spin_pages)
         hps.addStretch(1)
         lay.addWidget(self.row_ps)
         self.row_ps.setVisible(False)
@@ -313,7 +327,8 @@ class ConvertPage(QWidget):
         self.worker = ConvertWorker(task_name, files, out_dir,
                                     hifi=self.chk_hifi.isChecked(),
                                     excel_landscape=landscape,
-                                    excel_fitwide=self.chk_fitwide.isChecked())
+                                    excel_fitwide=self.chk_fitwide.isChecked(),
+                                    excel_total_pages=self.spin_pages.value())
         self.worker.log_sig.connect(self.append_log)
         self.worker.progress_sig.connect(self.pb.setValue)
         self.worker.done_sig.connect(self._finished)

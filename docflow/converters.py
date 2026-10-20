@@ -24,9 +24,10 @@ _com_lock = threading.Lock()
 
 def _com_to_pdf(src, dst, progids, page_setup=None):
     """通过 COM (MS Office 或 WPS) 将 office 文档导出为 PDF, 单线程串行调用
-    page_setup: (landscape, fit_wide), 仅对 Excel 生效
+    page_setup: (landscape, fit_wide, total_pages), 仅对 Excel 生效
       landscape: None=跟随文档 / True=横向 / False=纵向
-      fit_wide: True=所有列缩放至一页宽 (宽表格推荐)"""
+      fit_wide: True=所有列缩放至一页宽 (宽表格推荐)
+      total_pages: None=高度自动分页 / N=整表缩放均分为 N 页"""
     last = "未知错误"
     with _com_lock:
         for progid in progids:
@@ -50,8 +51,9 @@ def _com_to_pdf(src, dst, progids, page_setup=None):
                     doc.Close(False)
                 elif "Excel" in progid or "KET" in progid:
                     wb = app.Workbooks.Open(s, ReadOnly=True)
-                    if page_setup and (page_setup[0] is not None or page_setup[1]):
-                        landscape, fit_wide = page_setup
+                    if page_setup and (page_setup[0] is not None or page_setup[1]
+                                       or page_setup[2]):
+                        landscape, fit_wide, total_pages = page_setup
                         for ws in wb.Worksheets:
                             try:
                                 ps = ws.PageSetup
@@ -60,7 +62,25 @@ def _com_to_pdf(src, dst, progids, page_setup=None):
                                 if fit_wide:
                                     ps.Zoom = False
                                     ps.FitToPagesWide = 1   # 所有列缩放至一页宽
-                                    ps.FitToPagesTall = False  # 高度自动分页
+                                    ps.FitToPagesTall = False  # 高度按分页符/自动
+                                if total_pages and total_pages >= 1:
+                                    if total_pages == 1:
+                                        ps.FitToPagesTall = 1   # 整表缩放单页
+                                    else:
+                                        # 等分切割: 在行号均分点插入手动水平分页符,
+                                        # 输出恰好 N 页且每页行数基本相同
+                                        first = ws.UsedRange.Row
+                                        last = first + ws.UsedRange.Rows.Count - 1
+                                        data = last - first + 1
+                                        if data >= total_pages:
+                                            step = data / total_pages
+                                            for k in range(1, total_pages):
+                                                r = int(round(first + k * step))
+                                                if first < r <= last:
+                                                    try:
+                                                        ws.HPageBreaks.Add(ws.Cells(r, 1))
+                                                    except Exception:
+                                                        ws.Rows(r).PageBreak = 2
                             except Exception:
                                 continue
                     wb.ExportAsFixedFormat(0, d)            # xlTypePDF
@@ -127,35 +147,72 @@ def _docx_text_fallback_pdf(src, dst):
     return True, "未检测到 Office/WPS, 已用内置引擎简易排版(样式有损)"
 
 
-def _xlsx_text_fallback_pdf(src, dst, landscape=None):
-    """无 Office 时的 Excel->PDF 兜底: 表格转 HTML 再排版 (landscape=True 为横向)"""
+def _xlsx_text_fallback_pdf(src, dst, landscape=None, total_pages=None):
+    """无 Office 时的 Excel->PDF 兜底: 表格转 HTML 再排版 (landscape=True 为横向)
+    total_pages=N 时把数据行均分为 N 组, 每组独立成页 (近似等分)"""
     import openpyxl
     import pymupdf
     wb = openpyxl.load_workbook(src, data_only=True)
-    parts = []
-    for ws in wb.worksheets:
-        parts.append(f"<h3>{html.escape(ws.title)}</h3><table border='1' cellspacing='0'>")
-        for row in ws.iter_rows(max_row=500, max_col=30, values_only=True):
-            cells = "".join(f"<td>{html.escape('' if v is None else str(v))}</td>" for v in row)
+
+    def paper():
+        if landscape:
+            try:
+                r = pymupdf.paper_rect("a4-l")
+            except Exception:
+                r = pymupdf.Rect(0, 0, 842, 595)
+            if r.width > r.height:
+                return r
+        return pymupdf.paper_rect("a4")
+
+    def render_html(html_text, out):
+        writer = pymupdf.DocumentWriter(out)
+        story = pymupdf.Story(html=html_text)
+        where = paper() + (24, 24, -24, -24)
+        more = 1
+        while more:
+            dev = writer.begin_page(paper())
+            more, filled = story.place(where)
+            story.draw(dev)
+            writer.end_page()
+        writer.close()
+
+    def rows_html(rows):
+        parts = ["<table border='1' cellspacing='0'>"]
+        for row in rows:
+            cells = "".join(f"<td>{html.escape('' if v is None else str(v))}</td>"
+                            for v in row[:30])
             parts.append(f"<tr>{cells}</tr>")
         parts.append("</table>")
-    writer = pymupdf.DocumentWriter(dst)
-    story = pymupdf.Story(html="".join(parts))
-    if landscape:
-        try:
-            mediabox = pymupdf.paper_rect("a4-l")
-        except Exception:
-            mediabox = pymupdf.Rect(0, 0, 842, 595)
-    else:
-        mediabox = pymupdf.paper_rect("a4")
-    where = mediabox + (24, 24, -24, -24)
-    more = 1
-    while more:
-        dev = writer.begin_page(mediabox)
-        more, filled = story.place(where)
-        story.draw(dev)
-        writer.end_page()
-    writer.close()
+        return "".join(parts)
+
+    # 收集全部数据行 (所有工作表)
+    all_rows = []
+    for ws in wb.worksheets:
+        for row in ws.iter_rows(max_row=500, max_col=30, values_only=True):
+            all_rows.append(row)
+
+    if total_pages and total_pages >= 1:
+        # 均分: 行切成 N 组, 每组独立渲染, 最后合并
+        n = total_pages
+        chunk = max(1, (len(all_rows) + n - 1) // n)
+        tmp_files = []
+        i = 0
+        while i < len(all_rows):
+            tmp = dst + f".part{i}.pdf"
+            render_html(rows_html(all_rows[i:i + chunk]), tmp)
+            tmp_files.append(tmp)
+            i += chunk
+        out = pymupdf.open()
+        for t in tmp_files:
+            out.insert_pdf(pymupdf.open(t))
+            os.remove(t)
+        out.save(dst)
+        out.close()
+        return True, (f"未检测到 Office/WPS, 已用内置引擎简易排版"
+                      f"(均分 {min(n, len(tmp_files))} 页, 样式有损)")
+
+    # 非均分: 整表一个 Story 流式排版
+    render_html(rows_html(all_rows), dst)
     return True, "未检测到 Office/WPS, 已用内置引擎简易排版(样式有损)"
 
 
@@ -169,16 +226,18 @@ def word_to_pdf(src, dst, log=print):
     return _docx_text_fallback_pdf(src, dst)
 
 
-def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False):
+def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False, total_pages=None):
     """Excel -> PDF
     landscape: None=跟随文档 / True=横向 / False=纵向
-    fit_wide:  所有列缩放至一页宽 (宽表格显示更完整)"""
-    ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS, page_setup=(landscape, fit_wide))
+    fit_wide:  所有列缩放至一页宽 (宽表格显示更完整)
+    total_pages: None=高度自动分页 / N=整表缩放均分为 N 页"""
+    ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS,
+                          page_setup=(landscape, fit_wide, total_pages))
     if ok:
         _auto_fix_rotation(dst, log=log)
         return True, msg
     log(msg + "，正在使用内置引擎兜底…")
-    return _xlsx_text_fallback_pdf(src, dst, landscape=landscape)
+    return _xlsx_text_fallback_pdf(src, dst, landscape=landscape, total_pages=total_pages)
 
 
 def _text_orientation(page):
