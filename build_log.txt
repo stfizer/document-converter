@@ -1,11 +1,11 @@
-361 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.8
-361 INFO: Python: 3.13.14
-382 INFO: Platform: Windows-11-10.0.28000-SP0
-382 INFO: Python environment: C:\Users\stfizer\.workbuddy\binaries\python\envs\default
-385 INFO: wrote F:\workbuddy空间任务\文件文档转化工具\文档转换助手.spec
-391 INFO: Removing temporary files and cleaning cache in C:\Users\stfizer\AppData\Local\pyinstaller
+283 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.8
+283 INFO: Python: 3.13.14
+303 INFO: Platform: Windows-11-10.0.28000-SP0
+303 INFO: Python environment: C:\Users\stfizer\.workbuddy\binaries\python\envs\default
+306 INFO: wrote F:\workbuddy空间任务\文件文档转化工具\文档转换助手.spec
+312 INFO: Removing temporary files and cleaning cache in C:\Users\stfizer\AppData\Local\pyinstaller
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-7480 INFO: Module search paths (PYTHONPATH):
+7153 INFO: Module search paths (PYTHONPATH):
 ['F:\\workbuddy空间任务\\文件文档转化工具',
  'E:\\WorkBuddy\\resources\\app.asar.unpacked\\cli\\vendor\\shim',
  'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\versions\\3.13.12\\python313.zip',
@@ -18,92 +18,92 @@ warning: The `fitz` API is deprecated and will be removed in future. Use `import
  'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\win32\\lib',
  'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\pythonwin',
  'F:\\workbuddy空间任务\\文件文档转化工具']
-8439 INFO: Appending 'binaries' from .spec
-8439 INFO: Appending 'datas' from .spec
-8471 INFO: checking Analysis
-8471 INFO: Building Analysis because Analysis-00.toc is non existent
-8471 INFO: Looking for Python shared library...
-8471 INFO: Using Python shared library: C:\Users\stfizer\.workbuddy\binaries\python\versions\3.13.12\python313.dll
-8471 INFO: Running Analysis Analysis-00.toc
-8471 INFO: Target bytecode optimization level: 0
-8471 INFO: Initializing module dependency graph...
-8474 INFO: Initializing module graph hook caches...
-8507 INFO: Analyzing modules for base_library.zip ...
-11001 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-11010 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-11073 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-12789 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-13888 INFO: Caching module dependency graph...
-13921 INFO: Analyzing F:\workbuddy空间任务\文件文档转化工具\run.py
-13944 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-13951 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-13999 INFO: Processing standard module hook 'hook-PySide6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-14720 INFO: Processing standard module hook 'hook-shiboken6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-14842 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-17015 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-18750 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-24116 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-25552 INFO: Processing standard module hook 'hook-pythoncom.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-26057 INFO: Processing standard module hook 'hook-pywintypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-26518 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
-27043 INFO: Processing standard module hook 'hook-win32com.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-29072 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-29263 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-29390 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-29563 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-29623 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-30475 INFO: Processing standard module hook 'hook-lxml.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-31332 INFO: Processing standard module hook 'hook-lxml.etree.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-31336 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-32393 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
-32396 INFO: SetuptoolsInfo: initializing cached setuptools info...
-35624 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-35688 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-36564 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-38213 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-38568 INFO: Processing standard module hook 'hook-docx.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-39000 INFO: Processing standard module hook 'hook-openpyxl.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-39885 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-41209 INFO: Analyzing hidden import 'pymupdf.__main__'
-41231 INFO: Processing module hooks (post-graph stage)...
-41423 INFO: Processing standard module hook 'hook-lxml.isoschematron.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-41718 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-41754 INFO: Processing standard module hook 'hook-lxml.objectify.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
-41760 INFO: Performing binary vs. data reclassification (342 entries)
-41984 INFO: Looking for ctypes DLLs
-42013 INFO: Analyzing run-time hooks ...
-42015 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-42018 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-42021 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-42023 INFO: Including run-time hook 'pyi_rth_pywintypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
-42025 INFO: Including run-time hook 'pyi_rth_pythoncom.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
-42026 INFO: Including run-time hook 'pyi_rth_pyside6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
-42029 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
-42031 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
-42044 INFO: Creating base_library.zip...
-42055 INFO: Looking for dynamic libraries
+8211 INFO: Appending 'binaries' from .spec
+8211 INFO: Appending 'datas' from .spec
+8235 INFO: checking Analysis
+8235 INFO: Building Analysis because Analysis-00.toc is non existent
+8235 INFO: Looking for Python shared library...
+8235 INFO: Using Python shared library: C:\Users\stfizer\.workbuddy\binaries\python\versions\3.13.12\python313.dll
+8235 INFO: Running Analysis Analysis-00.toc
+8235 INFO: Target bytecode optimization level: 0
+8235 INFO: Initializing module dependency graph...
+8237 INFO: Initializing module graph hook caches...
+8249 INFO: Analyzing modules for base_library.zip ...
+10878 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+11868 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+12615 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+13123 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+13482 INFO: Caching module dependency graph...
+13508 INFO: Analyzing F:\workbuddy空间任务\文件文档转化工具\run.py
+13535 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+13539 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+13576 INFO: Processing standard module hook 'hook-PySide6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+14191 INFO: Processing standard module hook 'hook-shiboken6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+14285 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+16401 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+18219 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+23584 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+24978 INFO: Processing standard module hook 'hook-pythoncom.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+25500 INFO: Processing standard module hook 'hook-pywintypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+25984 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+26478 INFO: Processing standard module hook 'hook-win32com.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+28298 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+28478 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+28597 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+28761 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+28819 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+29789 INFO: Processing standard module hook 'hook-lxml.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+30657 INFO: Processing standard module hook 'hook-lxml.etree.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+30660 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+31641 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+31643 INFO: SetuptoolsInfo: initializing cached setuptools info...
+34592 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+34654 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+35515 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+36992 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+37323 INFO: Processing standard module hook 'hook-docx.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+37708 INFO: Processing standard module hook 'hook-openpyxl.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+38501 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+39859 INFO: Analyzing hidden import 'pymupdf.__main__'
+39884 INFO: Processing module hooks (post-graph stage)...
+40124 INFO: Processing standard module hook 'hook-lxml.isoschematron.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+40474 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+40510 INFO: Processing standard module hook 'hook-lxml.objectify.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+40518 INFO: Performing binary vs. data reclassification (342 entries)
+40719 INFO: Looking for ctypes DLLs
+40750 INFO: Analyzing run-time hooks ...
+40753 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+40756 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+40758 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+40760 INFO: Including run-time hook 'pyi_rth_pywintypes.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+40762 INFO: Including run-time hook 'pyi_rth_pythoncom.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+40763 INFO: Including run-time hook 'pyi_rth_pyside6.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+40765 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+40768 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PyInstaller\\hooks'
+40783 INFO: Creating base_library.zip...
+40796 INFO: Looking for dynamic libraries
 warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
-44552 INFO: Extra DLL search directories (AddDllDirectory): ['F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\shiboken6', 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\numpy.libs', 'F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\cv2\\../../x64/vc17/bin']
-44552 INFO: Extra DLL search directories (PATH): ['F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\cv2\\../../x64/vc17/bin', 'F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PySide6']
-47521 INFO: Warnings written to F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\warn-文档转换助手.txt
-47557 INFO: Graph cross-reference written to F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\xref-文档转换助手.html
-47590 INFO: checking PYZ
-47590 INFO: Building PYZ because PYZ-00.toc is non existent
-47590 INFO: Building PYZ (ZlibArchive) F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\PYZ-00.pyz
-48202 INFO: Building PYZ (ZlibArchive) F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\PYZ-00.pyz completed successfully.
-48222 INFO: checking PKG
-48222 INFO: Building PKG because PKG-00.toc is non existent
-48222 INFO: Building PKG (CArchive) 文档转换助手.pkg
-68646 INFO: Building PKG (CArchive) 文档转换助手.pkg completed successfully.
-68654 INFO: Bootloader C:\Users\stfizer\.workbuddy\binaries\python\envs\default\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
-68654 INFO: checking EXE
-68654 INFO: Building EXE because EXE-00.toc is non existent
-68654 INFO: Building EXE from EXE-00.toc
-68932 INFO: Copying bootloader EXE to F:\workbuddy空间任务\文件文档转化工具\dist\文档转换助手.exe
-68948 INFO: Copying icon to EXE
-68960 INFO: Copying 0 resources to EXE
-68960 INFO: Embedding manifest in EXE
-68970 INFO: Appending PKG archive to EXE
-69036 INFO: Fixing EXE headers
-69489 INFO: Building EXE from EXE-00.toc completed successfully.
-69495 INFO: Build complete! The results are available in: F:\workbuddy空间任务\文件文档转化工具\dist
+43075 INFO: Extra DLL search directories (AddDllDirectory): ['F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\shiboken6', 'C:\\Users\\stfizer\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\numpy.libs', 'F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\cv2\\../../x64/vc17/bin']
+43075 INFO: Extra DLL search directories (PATH): ['F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\cv2\\../../x64/vc17/bin', 'F:\\workbuddy\\.workbuddy\\binaries\\python\\envs\\default\\Lib\\site-packages\\PySide6']
+45680 INFO: Warnings written to F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\warn-文档转换助手.txt
+45721 INFO: Graph cross-reference written to F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\xref-文档转换助手.html
+45752 INFO: checking PYZ
+45753 INFO: Building PYZ because PYZ-00.toc is non existent
+45753 INFO: Building PYZ (ZlibArchive) F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\PYZ-00.pyz
+46376 INFO: Building PYZ (ZlibArchive) F:\workbuddy空间任务\文件文档转化工具\build\文档转换助手\PYZ-00.pyz completed successfully.
+46396 INFO: checking PKG
+46396 INFO: Building PKG because PKG-00.toc is non existent
+46396 INFO: Building PKG (CArchive) 文档转换助手.pkg
+66743 INFO: Building PKG (CArchive) 文档转换助手.pkg completed successfully.
+66749 INFO: Bootloader C:\Users\stfizer\.workbuddy\binaries\python\envs\default\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+66749 INFO: checking EXE
+66749 INFO: Building EXE because EXE-00.toc is non existent
+66749 INFO: Building EXE from EXE-00.toc
+67077 INFO: Copying bootloader EXE to F:\workbuddy空间任务\文件文档转化工具\dist\文档转换助手.exe
+67091 INFO: Copying icon to EXE
+67102 INFO: Copying 0 resources to EXE
+67102 INFO: Embedding manifest in EXE
+67112 INFO: Appending PKG archive to EXE
+67180 INFO: Fixing EXE headers
+67647 INFO: Building EXE from EXE-00.toc completed successfully.
+67653 INFO: Build complete! The results are available in: F:\workbuddy空间任务\文件文档转化工具\dist

@@ -24,10 +24,11 @@ _com_lock = threading.Lock()
 
 def _com_to_pdf(src, dst, progids, page_setup=None):
     """通过 COM (MS Office 或 WPS) 将 office 文档导出为 PDF, 单线程串行调用
-    page_setup: (landscape, fit_wide, total_pages), 仅对 Excel 生效
+    page_setup: dict, 仅对 Excel 生效:
       landscape: None=跟随文档 / True=横向 / False=纵向
       fit_wide: True=所有列缩放至一页宽 (宽表格推荐)
-      total_pages: None=高度自动分页 / N=整表缩放均分为 N 页"""
+      total_pages: None=高度自动分页 / N=内容均分为 N 页
+      split: "row"=上下按行分割 / "col"=左右按列分割"""
     last = "未知错误"
     with _com_lock:
         for progid in progids:
@@ -51,36 +52,66 @@ def _com_to_pdf(src, dst, progids, page_setup=None):
                     doc.Close(False)
                 elif "Excel" in progid or "KET" in progid:
                     wb = app.Workbooks.Open(s, ReadOnly=True)
-                    if page_setup and (page_setup[0] is not None or page_setup[1]
-                                       or page_setup[2]):
-                        landscape, fit_wide, total_pages = page_setup
+                    if page_setup and any(page_setup.get(k) is not None for k in
+                                          ("landscape", "fit_wide", "total_pages")):
+                        landscape = page_setup.get("landscape")
+                        fit_wide = page_setup.get("fit_wide")
+                        total_pages = page_setup.get("total_pages")
+                        split = page_setup.get("split") or "row"
+                        col_mode = (split == "col" and total_pages and total_pages >= 2)
                         for ws in wb.Worksheets:
                             try:
                                 ps = ws.PageSetup
                                 if landscape is not None:
                                     ps.Orientation = 2 if landscape else 1  # 2=横向
-                                if fit_wide:
+                                if col_mode:
+                                    # 左右分割: 不缩放列, 按列宽累计均分插入垂直分页符
                                     ps.Zoom = False
-                                    ps.FitToPagesWide = 1   # 所有列缩放至一页宽
-                                    ps.FitToPagesTall = False  # 高度按分页符/自动
-                                if total_pages and total_pages >= 1:
-                                    if total_pages == 1:
-                                        ps.FitToPagesTall = 1   # 整表缩放单页
-                                    else:
-                                        # 等分切割: 在行号均分点插入手动水平分页符,
-                                        # 输出恰好 N 页且每页行数基本相同
-                                        first = ws.UsedRange.Row
-                                        last = first + ws.UsedRange.Rows.Count - 1
-                                        data = last - first + 1
-                                        if data >= total_pages:
-                                            step = data / total_pages
-                                            for k in range(1, total_pages):
-                                                r = int(round(first + k * step))
-                                                if first < r <= last:
+                                    ps.FitToPagesWide = False
+                                    ps.FitToPagesTall = False
+                                    fc = ws.UsedRange.Column
+                                    lc = fc + ws.UsedRange.Columns.Count - 1
+                                    ncol = lc - fc + 1
+                                    if ncol >= total_pages:
+                                        widths = [ws.Columns(c).Width
+                                                  for c in range(fc, lc + 1)]
+                                        total_w = sum(widths)
+                                        acc, k = 0.0, 1
+                                        for idx, cw in enumerate(widths):
+                                            acc += cw
+                                            if k < total_pages and \
+                                                    acc >= total_w * k / total_pages:
+                                                col = fc + idx + 1
+                                                if col <= lc:
                                                     try:
-                                                        ws.HPageBreaks.Add(ws.Cells(r, 1))
+                                                        ws.VPageBreaks.Add(
+                                                            ws.Cells(1, col))
                                                     except Exception:
-                                                        ws.Rows(r).PageBreak = 2
+                                                        ws.Columns(col).PageBreak = 2
+                                                k += 1
+                                else:
+                                    if fit_wide:
+                                        ps.Zoom = False
+                                        ps.FitToPagesWide = 1   # 所有列缩放至一页宽
+                                        ps.FitToPagesTall = False  # 高度按分页符/自动
+                                    if total_pages and total_pages >= 1:
+                                        if total_pages == 1:
+                                            ps.FitToPagesTall = 1   # 整表缩放单页
+                                        else:
+                                            # 上下等分: 在行号均分点插入手动水平分页符
+                                            first = ws.UsedRange.Row
+                                            last = first + ws.UsedRange.Rows.Count - 1
+                                            data = last - first + 1
+                                            if data >= total_pages:
+                                                step = data / total_pages
+                                                for k in range(1, total_pages):
+                                                    r = int(round(first + k * step))
+                                                    if first < r <= last:
+                                                        try:
+                                                            ws.HPageBreaks.Add(
+                                                                ws.Cells(r, 1))
+                                                        except Exception:
+                                                            ws.Rows(r).PageBreak = 2
                             except Exception:
                                 continue
                     wb.ExportAsFixedFormat(0, d)            # xlTypePDF
@@ -147,9 +178,10 @@ def _docx_text_fallback_pdf(src, dst):
     return True, "未检测到 Office/WPS, 已用内置引擎简易排版(样式有损)"
 
 
-def _xlsx_text_fallback_pdf(src, dst, landscape=None, total_pages=None):
+def _xlsx_text_fallback_pdf(src, dst, landscape=None, total_pages=None, split="row"):
     """无 Office 时的 Excel->PDF 兜底: 表格转 HTML 再排版 (landscape=True 为横向)
-    total_pages=N 时把数据行均分为 N 组, 每组独立成页 (近似等分)"""
+    total_pages=N: split="row" 按行均分上下切割; split="col" 按列均分左右切割
+    (左右分割时每页列数=总列数/N, 行方向自然分页)"""
     import openpyxl
     import pymupdf
     wb = openpyxl.load_workbook(src, data_only=True)
@@ -185,14 +217,37 @@ def _xlsx_text_fallback_pdf(src, dst, landscape=None, total_pages=None):
         parts.append("</table>")
         return "".join(parts)
 
-    # 收集全部数据行 (所有工作表)
+    # 收集全部数据行 (所有工作表); iter_rows 会用 None 补齐到 max_col, 需裁掉尾部 None
     all_rows = []
     for ws in wb.worksheets:
         for row in ws.iter_rows(max_row=500, max_col=30, values_only=True):
-            all_rows.append(row)
+            row = list(row)
+            while row and row[-1] is None:
+                row.pop()
+            if row:
+                all_rows.append(tuple(row))
+
+    if total_pages and total_pages >= 2 and split == "col":
+        # 左右分割: 列均分为 N 组, 每组独立渲染 (行完整, 自然分页)
+        ncol = min(30, max((len(r) for r in all_rows), default=1))
+        chunk = (ncol + total_pages - 1) // total_pages
+        tmp_files = []
+        for gi in range(0, ncol, chunk):
+            sub = [r[gi:gi + chunk] for r in all_rows]
+            tmp = dst + f".vpart{gi}.pdf"
+            render_html(rows_html(sub), tmp)
+            tmp_files.append(tmp)
+        out = pymupdf.open()
+        for t in tmp_files:
+            out.insert_pdf(pymupdf.open(t))
+            os.remove(t)
+        out.save(dst)
+        out.close()
+        return True, (f"未检测到 Office/WPS, 已用内置引擎简易排版"
+                      f"(左右均分 {min(total_pages, len(tmp_files))} 页, 样式有损)")
 
     if total_pages and total_pages >= 1:
-        # 均分: 行切成 N 组, 每组独立渲染, 最后合并
+        # 上下均分: 行切成 N 组, 每组独立渲染, 最后合并
         n = total_pages
         chunk = max(1, (len(all_rows) + n - 1) // n)
         tmp_files = []
@@ -226,18 +281,22 @@ def word_to_pdf(src, dst, log=print):
     return _docx_text_fallback_pdf(src, dst)
 
 
-def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False, total_pages=None):
+def excel_to_pdf(src, dst, log=print, landscape=None, fit_wide=False,
+                 total_pages=None, split="row"):
     """Excel -> PDF
     landscape: None=跟随文档 / True=横向 / False=纵向
     fit_wide:  所有列缩放至一页宽 (宽表格显示更完整)
-    total_pages: None=高度自动分页 / N=整表缩放均分为 N 页"""
+    total_pages: None=高度自动分页 / N=内容均分为 N 页
+    split: "row"=上下按行分割 / "col"=左右按列分割 (左右分割时不缩放列)"""
     ok, msg = _com_to_pdf(src, dst, _EXCEL_PROGIDS,
-                          page_setup=(landscape, fit_wide, total_pages))
+                          page_setup={"landscape": landscape, "fit_wide": fit_wide,
+                                      "total_pages": total_pages, "split": split})
     if ok:
         _auto_fix_rotation(dst, log=log)
         return True, msg
     log(msg + "，正在使用内置引擎兜底…")
-    return _xlsx_text_fallback_pdf(src, dst, landscape=landscape, total_pages=total_pages)
+    return _xlsx_text_fallback_pdf(src, dst, landscape=landscape,
+                                   total_pages=total_pages, split=split)
 
 
 def _text_orientation(page):

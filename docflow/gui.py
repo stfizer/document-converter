@@ -66,7 +66,8 @@ class ConvertWorker(QThread):
     progress_sig = Signal(int)
 
     def __init__(self, task_name, files, out_dir, hifi=False,
-                 excel_landscape=None, excel_fitwide=False, excel_total_pages=None):
+                 excel_landscape=None, excel_fitwide=False, excel_total_pages=None,
+                 excel_split="row"):
         super().__init__()
         self.task_name = task_name
         self.files = files
@@ -75,6 +76,7 @@ class ConvertWorker(QThread):
         self.excel_landscape = excel_landscape
         self.excel_fitwide = excel_fitwide
         self.excel_total_pages = excel_total_pages
+        self.excel_split = excel_split
 
     def run(self):
         ok_all = True
@@ -103,7 +105,8 @@ class ConvertWorker(QThread):
                     ok, msg = cv.excel_to_pdf(src, dst, log=self.log_sig.emit,
                                               landscape=self.excel_landscape,
                                               fit_wide=self.excel_fitwide,
-                                              total_pages=self.excel_total_pages)
+                                              total_pages=self.excel_total_pages,
+                                              split=self.excel_split)
                     if ok:
                         self.log_sig.emit(f"  ✔ 输出: {dst}")
                 elif func is cv.pdf_to_word and self.hifi:
@@ -194,10 +197,20 @@ class ConvertPage(QWidget):
         self.spin_pages.setSpecialValueText("自动（按内容分页）")
         self.spin_pages.setFixedWidth(170)
         self.spin_pages.setToolTip(
-            "指定最终 PDF 的总页数, 表格内容会缩放并均匀切割到这几页里。\n"
+            "指定最终 PDF 的总页数, 表格内容会均匀切割到这几页里。\n"
             "0 = 自动 (按内容多少分页, 不限页数)。\n"
-            "例: 设为 3, 则长表格被均分为 3 页, 每页行数基本相同。")
+            "例: 设为 3, 上下分割 = 长表格按行均分 3 页;\n"
+            "        左右分割 = 宽表格按列均分 3 页 (每页 1/3 列, 字号不缩小)。")
         hps.addWidget(self.spin_pages)
+        hps.addWidget(QLabel("切割方向:"))
+        self.cmb_split = QComboBox()
+        self.cmb_split.addItems(["上下（按行均分）", "左右（按列均分）"])
+        self.cmb_split.setFixedWidth(160)
+        self.cmb_split.setToolTip(
+            "上下: 每页为表格的一段行 (适合行多的长表)。\n"
+            "左右: 每页为表格的一段列, 字号保持不缩小 (适合列多的宽表);\n"
+            "      行数较多时每页会自动向下续页, 实际总页数可能多于指定页数。")
+        hps.addWidget(self.cmb_split)
         hps.addStretch(1)
         lay.addWidget(self.row_ps)
         self.row_ps.setVisible(False)
@@ -324,11 +337,13 @@ class ConvertPage(QWidget):
         self.pb.setValue(0)
         orient = self.cmb_orient.currentIndex()
         landscape = {0: None, 1: False, 2: True}[orient]
+        split = ("col" if self.cmb_split.currentIndex() == 1 else "row")
         self.worker = ConvertWorker(task_name, files, out_dir,
                                     hifi=self.chk_hifi.isChecked(),
                                     excel_landscape=landscape,
                                     excel_fitwide=self.chk_fitwide.isChecked(),
-                                    excel_total_pages=self.spin_pages.value())
+                                    excel_total_pages=self.spin_pages.value(),
+                                    excel_split=split)
         self.worker.log_sig.connect(self.append_log)
         self.worker.progress_sig.connect(self.pb.setValue)
         self.worker.done_sig.connect(self._finished)
